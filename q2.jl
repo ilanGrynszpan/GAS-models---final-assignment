@@ -3,8 +3,11 @@ import Pkg
 Pkg.add(["Distributions", "LinearAlgebra", "Random", "StatsBase", "StatsPlots", "JuMP"])
 Pkg.add("Plots")
 Pkg.add("Optim")
+Pkg.add("ForwardDiff")
 Pkg.add(["DataFrames", "CSV"])
-using Distributions, LinearAlgebra, Random, StatsBase, StatsPlots, Plots, Optim, JuMP, DataFrames, CSV
+Pkg.add("ScoreDrivenModels")
+Pkg.add("SpecialFunctions")
+using Distributions, LinearAlgebra, Random, StatsBase, StatsPlots, Plots, Optim, JuMP, DataFrames, CSV, ForwardDiff
 
 Random.seed!(1234)
 
@@ -25,6 +28,10 @@ df = CSV.read("./data/input/ipeadata-consumo-energia-SE.csv", DataFrame)
 
 y = df[:,2]
 
-### Defining the model
+### Defining the model for d=0
 
-modelo = Model(Optim.Optimizer);
+params = [Φ, k_μ, k_β, ]
+
+A = [4.0 0.0; 0.0 4.0]
+
+A^-1
