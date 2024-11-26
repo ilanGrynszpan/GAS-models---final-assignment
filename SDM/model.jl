@@ -19,7 +19,6 @@ function gamma_nabla(θ, x)
 
     Φ, λ = θ
 
-    println("digamma ", digamma(α), "  log(β) = ", log(β), "  y = ", x, "  log(y) = ", log(x), " α = ", α, "  β = ", β)
     # Gradient w.r.t. alpha
     grad_Φ = log(Φ) + 1 - log(λ) + log(x) - x/(λ) - digamma(Φ)
     
@@ -70,6 +69,8 @@ y = df[:,2]
 Φ = 0.5
 d = 0
 
+θ = [1.0 2.0]
+
 params = [0.5, 1.0, 1.0, 1.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 Φ, k_μ, k_β, k_γ = params[1:4]
 μ_10, β_10 = params[5:6]
@@ -90,8 +91,8 @@ for t in 1:T
     seasonal = seasonal_update(seasonal, t, 12, k_γ, S(y[t], d, θ)[2])
 
     if(t >= 2)
-        β_t = β_t + k_β * S(y[t], d, θ)[2]
-        μ_t = μ_t + β_t + k_μ * S(y[t], d, θ)[2]
+        β_t = β_t + k_β * (S(y[t], d, θ)[1]/S(y[t], d, θ)[2]) 
+        μ_t = μ_t + β_t + k_μ * (S(y[t], d, θ)[1]/S(y[t], d, θ)[2])
     end
 
     month = mod(t, 12)
