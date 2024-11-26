@@ -1,15 +1,5 @@
 
-using Distributions, LinearAlgebra, Random, Optim, JuMP, ForwardDiff, SpecialFunctions
-
-### code from ChatGPT
-
-# Define the parameter transformation
-function gamma_transform(θ)
-    φ, λ = θ
-    α = Φ
-    β = λ / φ
-    return [α, β]
-end
+using Distributions, LinearAlgebra, Random, Optim, JuMP, ForwardDiff, SpecialFunctions, CSV, DataFrames
 
 # Define the Fisher Information matrix
 function fisher_information_gamma(alpha, beta)
@@ -27,20 +17,18 @@ end
 # Define the nabla vector (gradient) for the Gamma distribution
 function gamma_nabla(θ, x)
 
-    α, β = gamma_transform(θ)
+    Φ, λ = θ
 
     println("digamma ", digamma(α), "  log(β) = ", log(β), "  y = ", x, "  log(y) = ", log(x), " α = ", α, "  β = ", β)
     # Gradient w.r.t. alpha
-    grad_alpha = log(β) - digamma(α) + log(x)
+    grad_Φ = log(Φ) + 1 - log(λ) + log(x) - x/(λ) - digamma(Φ)
     
     # Gradient w.r.t. beta
-    grad_beta = α / β - x
+    grad_λ = -(Φ/λ) + (Φ*x)/λ^2 
     
     # Return as a vector
-    return [grad_alpha, grad_beta]
+    return [grad_Φ, grad_λ]
 end
-
-### end of ChatGPT code
 
 # Define time-varying S parameter
 function S(val, d, θ)
@@ -70,6 +58,11 @@ function seasonal_update(seasonal, t, period, k_γ, S)
 end
 
 
+# Reading the input data
+
+df = CSV.read("./data/input/ipeadata-consumo-energia-SE.csv", DataFrame)
+y = df[:,2]
+
 # Define the log-likelihood function and the update
 
 ## params = [Φ, k_μ, k_β, k_γ, μ_10, β_10, γ_10, γ_20, γ_30, γ_40, γ_50, γ_60, γ_70, γ_80, γ_90, γ_100, γ_110, γ_120]
@@ -84,6 +77,9 @@ seasonal_init = params[7:end]
 
 μ_t, β_t = μ_10, β_10
 seasonal = seasonal_init
+
+λ_10 = exp(μ_10 + seasonal[1])
+θ = [Φ, λ_10]
 
 log_lik = 0.0
 T = length(y)
@@ -108,19 +104,17 @@ for t in 1:T
     println("start t = ", t)
 
     λ = exp(μ_t + seas)
-    θ = [Φ, λ/Φ]
+    θ = [Φ, λ]
     println("θ = ", Φ, "   ", λ, "   ", λ/Φ)
-    println(gamma_transform(θ)...)
     println(θ)
     println(seasonal[month])
     println(seasonal)
-    println("gamma transf ", gamma_transform(θ))
     println("nabla ", gamma_nabla(θ, y[t]))
     println(S(y[t], d, θ)[2])
     println(μ_t)
     println(t)
     println(month)
-    log_lik += logpdf(Gamma(gamma_transform(θ)...), y_t)
+    log_lik += logpdf(Gamma(Φ, Φ/λ), y_t)
 end
 
 
